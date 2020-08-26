@@ -1,0 +1,25 @@
+<launch> 
+
+  <!-- launch image selector -->
+  <include file="$(find image_selection)/launch/select.launch" />
+
+  <!-- launch truth publisher -->
+  <!-- <include file="$(find gazebo_truth_odom)/launch/scout_gazebo_truth_odom.launch" /> -->
+
+  <!-- launch evaluator -->
+  <group ns="scout_1">
+    <node pkg="wvu_vo_ros"
+          name="evaluator_node"
+          type="evaluator_node"
+          output="screen">
+    </node>
+
+    <rosparam command="load" file="$(find wvu_vo_ros)/config/parameters.yaml"/>
+
+    <param name ="/use_sim_time" value="true"/>
+
+  </group>
+
+
+
+</launch>
