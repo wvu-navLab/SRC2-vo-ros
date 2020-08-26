@@ -1,7 +1,8 @@
 # wvu_vo_ros
 ROS wrapper for wvu-vo
 
-**The submodule was merged into this repository, so the submodule commands are no longer needed.**
+**The submodule was merged into this repository, so the submodule commands are no longer needed.** 
+
 ~~To update submodule after pulling, run git submodule update --init --recursive~~ 
 
 ## Requirements
