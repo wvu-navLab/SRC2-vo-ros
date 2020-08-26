@@ -11,7 +11,6 @@
 
 #include <ros/ros.h>
 #include <wvu_vo_ros/ros_stereo_vo.hpp>
-#include <wvu_vo_ros/evaluator.hpp>
 
 int main(int argc, char **argv)
 {
