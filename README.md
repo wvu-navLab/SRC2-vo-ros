@@ -13,3 +13,12 @@ This code requires C++11 and OpenCV 3.2.0 or greater. To install OpenCV, an [ins
 
 ## Note
 Initial commit copied from **https://github.com/wvu-irl/wvu_vo_ros** and **https://github.com/wvu-irl/wvu_vo**
+
+## Launch
+Scout: ```roslaunch wvu_vo_ros vo_pipelineScout.launch```
+
+Excavator: ```roslaunch wvu_vo_ros vo_pipelineExcavator.launch```
+
+Hauler: ```roslaunch wvu_vo_ros vo_pipelineHauler.launch```
+
+For round2, the launch file is subject to change.
