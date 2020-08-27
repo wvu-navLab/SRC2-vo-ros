@@ -8,6 +8,7 @@
     <node pkg="wvu_vo_ros"
           name="ros_stereo_vo_node"
           type="ros_stereo_vo_node"
+          respawn= "true"
           output="screen">
     </node>
 
