@@ -51,7 +51,7 @@ load_parameters() {
   nh_.getParam("block_matcher/uniqueness_ratio", bm_params_.uniqueness_ratio);
   nh_.getParam("block_matcher/use_semi_global", bm_params_.use_semi_global);
 
-  //frame ids 
+  //frame ids
   //TODO: get these automatically instead of requiring as parameters
   nh_.getParam("frame_ids/camera_frame_id", camera_frame_id_);
   nh_.getParam("frame_ids/base_frame_id", base_frame_id_);
@@ -71,19 +71,19 @@ set_pose(const nav_msgs::Odometry & odom) {
 
   //base transformation (camera frame to base frame)
   tf::StampedTransform T_b2c;
-  
-  try 
+
+  try
   {
-    tf_listener_.waitForTransform(base_frame_id_, 
-                                  camera_frame_id_, 
-                                  ros::Time(0), 
+    tf_listener_.waitForTransform(base_frame_id_,
+                                  camera_frame_id_,
+                                  ros::Time(0),
                                   ros::Duration(1.0));
-    tf_listener_.lookupTransform(base_frame_id_, 
-                                 camera_frame_id_, 
-                                 ros::Time(0), 
+    tf_listener_.lookupTransform(base_frame_id_,
+                                 camera_frame_id_,
+                                 ros::Time(0),
                                  T_b2c);
-  } 
-  catch(tf::TransformException &ex) 
+  }
+  catch(tf::TransformException &ex)
   {
     ROS_WARN("%s", ex.what());
   }
@@ -119,31 +119,31 @@ cv::Mat ROSStereoVO::
 get_T_02k_in_base() const {
   //base transformation (camera frame to base frame)
   tf::StampedTransform T_b2c;
-  try 
+  try
   {
-    tf_listener_.waitForTransform(base_frame_id_, 
-                                  camera_frame_id_, 
-                                  ros::Time(0), 
+    tf_listener_.waitForTransform(base_frame_id_,
+                                  camera_frame_id_,
+                                  ros::Time(0),
                                   ros::Duration(1.0));
-    tf_listener_.lookupTransform(base_frame_id_, 
-                                 camera_frame_id_, 
-                                 ros::Time(0), 
+    tf_listener_.lookupTransform(base_frame_id_,
+                                 camera_frame_id_,
+                                 ros::Time(0),
                                  T_b2c);
-  } 
-  catch(tf::TransformException &ex) 
+  }
+  catch(tf::TransformException &ex)
   {
     ROS_WARN("%s", ex.what());
   }
 
   //pose of camera (transform from k=k to k=0)
-  tf::Matrix3x3 R(T_.at<double>(0,0), 
-                  T_.at<double>(0,1), 
+  tf::Matrix3x3 R(T_.at<double>(0,0),
+                  T_.at<double>(0,1),
                   T_.at<double>(0,2),
-                  T_.at<double>(1,0), 
-                  T_.at<double>(1,1), 
+                  T_.at<double>(1,0),
+                  T_.at<double>(1,1),
                   T_.at<double>(1,2),
-                  T_.at<double>(2,0), 
-                  T_.at<double>(2,1), 
+                  T_.at<double>(2,0),
+                  T_.at<double>(2,1),
                   T_.at<double>(2,2));
 
   tf::Vector3 t(T_.at<double>(0,3),
@@ -161,7 +161,7 @@ get_T_02k_in_base() const {
                                         R_b02bk[1][0], R_b02bk[1][1], R_b02bk[1][2], t_b02bk[1],
                                         R_b02bk[2][0], R_b02bk[2][1], R_b02bk[2][2], t_b02bk[2],
                                         0.0,     0.0,     0.0,     1.0);
-  return T; 
+  return T;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -175,7 +175,7 @@ bool ROSStereoVO::
 set_pose_callback(wvu_vo_ros::SetPose::Request  & req,
                   wvu_vo_ros::SetPose::Response & res) {
   set_pose(req.odom);
-  return true; 
+  return true;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -187,7 +187,7 @@ stereo_callback(const sensor_msgs::ImageConstPtr      & l_img,
   //header
   time_stamp_previous_ = time_stamp_;
   time_stamp_ = l_img->header.stamp;
-  
+
   //frame ids
   std::string camera_frame_id = l_img->header.frame_id;
   if(camera_frame_id != camera_frame_id_) {
@@ -301,7 +301,7 @@ publishDisparity() {
   //publish disparity (to topic "disparity")
   //cv::Mat = stereo_img_.get_disp();
   // ros::NodeHandle nh("");
-  
+
 
    // ros::Rate loop_rate(10);
    //  //int count =0;
@@ -341,7 +341,7 @@ publishDisparity() {
     temp_disp.convertTo(disp8, CV_8U, 1.0/(bm_params_.num_disparities*16)*256.0);
     sensor_msgs::ImagePtr temp_disp_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", disp8).toImageMsg();
     disparity_display_pub_.publish(temp_disp_msg);
-    
+
     // ros::spinOnce();
     // loop_rate.sleep();
   //   ++count;
@@ -388,13 +388,13 @@ publishPose() {
   tf::Transform T_ck2c0(R, t);
   tf::Transform T_bk2b0 = T_b2c * T_ck2c0 * T_b2c.inverse();
   tf::Transform T_b02bk = T_bk2b0.inverse();
-  tf_broadcaster_.sendTransform(tf::StampedTransform(T_b02bk,
-                                                     time_stamp_,
-                                                     "vo",
-                                                     base_frame_id_));
+  // tf_broadcaster_.sendTransform(tf::StampedTransform(T_b02bk,
+  //                                                    time_stamp_,
+  //                                                    "vo",
+  //                                                    base_frame_id_));
 
   //POSE
-  //convert pose transform to geometry_msgs::PoseWithCovariance 
+  //convert pose transform to geometry_msgs::PoseWithCovariance
   geometry_msgs::Transform pose_transform;
   tf::transformTFToMsg(T_b02bk, pose_transform);
 
@@ -469,7 +469,7 @@ publishTracks() {
   //                                  img_draw_p_.get_l_img(),
   //                                  img_draw_.get_l_img(),
   //                                  1);
-  // img_tracks = utils::show_image_points_color("feature tracks", 
+  // img_tracks = utils::show_image_points_color("feature tracks",
   //                                             img_tracks,
   //                                             ipts_clique_draw_,
   //                                             'y');
