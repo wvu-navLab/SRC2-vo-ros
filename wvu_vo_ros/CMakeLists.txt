@@ -59,11 +59,12 @@ add_subdirectory(wvu_vo)
 #######LIBRARIES########
 ########################
 add_library(ros_stereo_vo src/ros_stereo_vo.cpp)
-target_link_libraries(ros_stereo_vo 
+target_link_libraries(ros_stereo_vo
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
   wvu_vo
-) 
+)
+add_dependencies(ros_stereo_vo wvu_vo_ros_generate_messages_cpp)
 
 ##########################
 #######EXECUTABLES########
@@ -74,3 +75,4 @@ target_link_libraries(ros_stereo_vo_node
   ${OpenCV_LIBS}
   ros_stereo_vo
 )
+add_dependencies(ros_stereo_vo_node wvu_vo_ros_generate_messages_cpp)
