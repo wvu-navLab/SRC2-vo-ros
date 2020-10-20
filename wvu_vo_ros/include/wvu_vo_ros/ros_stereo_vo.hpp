@@ -72,8 +72,8 @@ class ROSStereoVO : public StereoVO {
       disparity_display_pub_ = nh_.advertise<sensor_msgs::Image>("disparity_display",1);
 
       //setup servers
-      set_pose_srv_ = nh_.advertiseService("set_pose", 
-                                           &ROSStereoVO::set_pose_callback, 
+      set_pose_srv_ = nh_.advertiseService("set_pose",
+                                           &ROSStereoVO::set_pose_callback,
                                            this);
 
       //setup callbacks
@@ -104,7 +104,7 @@ class ROSStereoVO : public StereoVO {
     void publishTracks();
 
     /* ------------------------------------------------------------------------ */
-    //TODO: clean up implementation of these options 
+    //TODO: clean up implementation of these options
     //config for debugging and tuning parameters, ALL should be default to 0
     int config_tune_block_matcher = 0;
 

@@ -44,10 +44,10 @@ process(StereoImage & stereo_img)
   }
 }
 
-/* ------------------------------------------------------------------------ */ 
+/* ------------------------------------------------------------------------ */
 void StereoVO::
 reset() {
-  T_ = (cv::Mat_<double>(4,4) << 
+  T_ = (cv::Mat_<double>(4,4) <<
             1.0, 0.0, 0.0, 0.0,
             0.0, 1.0, 0.0, 0.0,
             0.0, 0.0, 1.0, 0.0,
@@ -75,7 +75,7 @@ processLeftRight(StereoImage img) {
   }
 
   //compute matches between previous frame
-  std::vector<cv::DMatch> mP = utils::compute_matches(img_p_.get_l_desc(), 
+  std::vector<cv::DMatch> mP = utils::compute_matches(img_p_.get_l_desc(),
                                                       img.get_l_desc());
 
   //add matched 2d/3d points
@@ -89,12 +89,12 @@ processLeftRight(StereoImage img) {
     std::cout << "Not enough observed points to compute motion!" << std::endl;
     return;
   }
-  
+
   //essential constraint (for removing outliers only)
   std::vector<uchar> inliers_epipolar;
   inliers_epipolar = epipolarConstraint(img_p_.get_ipts(),
-                                        img.get_ipts(), 
-                                        img.get_l_info(), 
+                                        img.get_ipts(),
+                                        img.get_l_info(),
                                         img.get_l_info());
   utils::delete_outliers(img_p_.get_ipts(), inliers_epipolar);
   utils::delete_outliers(img_p_.get_opts(), inliers_epipolar);
@@ -133,9 +133,9 @@ processLeftRight(StereoImage img) {
   //              );
 
   //show tracks after removing outliers
-  // utils::show_tracks("process_lr: show_tracks (after outlier removal)", 
-  //                    img_p_.get_ipts(), 
-  //                    img.get_ipts(), 
+  // utils::show_tracks("process_lr: show_tracks (after outlier removal)",
+  //                    img_p_.get_ipts(),
+  //                    img.get_ipts(),
   //                    img.get_l_img());
 
   //compute motion (transform from previous left to current left)
@@ -148,7 +148,7 @@ processLeftRight(StereoImage img) {
 
   //update vars
   img_p_ = img;
-  
+
   return;
 };
 
@@ -165,7 +165,7 @@ processLeftDisparity(StereoImage img) {
   // utils::smooth(img.get_r_img());
   // utils::show_stereo("l_img, r_img",img.get_l_img() ,img.get_r_img());
   // utils::show_anaglyph("anaglyph",img.get_l_img() ,img.get_r_img());
-  
+
   ///////////////////////////
   /////////DISPARITY/////////
   ///////////////////////////
@@ -199,7 +199,7 @@ processLeftDisparity(StereoImage img) {
     std::cout << "Not enough features in previous frame for tracking!\n";
 
     //set delta equal to zero
-    delta_ =  (cv::Mat_<double>(4,4) << 
+    delta_ =  (cv::Mat_<double>(4,4) <<
                 1.0, 0.0, 0.0, 0.0,
                 0.0, 1.0, 0.0, 0.0,
                 0.0, 0.0, 1.0, 0.0,
@@ -229,7 +229,7 @@ processLeftDisparity(StereoImage img) {
     std::cout << "Not enough observed points to compute motion!\n";
 
     //set delta equal to zero
-    delta_ =  (cv::Mat_<double>(4,4) << 
+    delta_ =  (cv::Mat_<double>(4,4) <<
                 1.0, 0.0, 0.0, 0.0,
                 0.0, 1.0, 0.0, 0.0,
                 0.0, 0.0, 1.0, 0.0,
@@ -267,7 +267,7 @@ processLeftDisparity(StereoImage img) {
     std::cout << "Not enough points in max clique to compute motion!\n";
 
     //set delta equal to zero
-    delta_ =  (cv::Mat_<double>(4,4) << 
+    delta_ =  (cv::Mat_<double>(4,4) <<
                 1.0, 0.0, 0.0, 0.0,
                 0.0, 1.0, 0.0, 0.0,
                 0.0, 0.0, 1.0, 0.0,
@@ -333,12 +333,12 @@ processLeftDisparity(StereoImage img) {
   /////////////////////////////
   //TODO: add verbosity
   //show tracks after removing outliers
-  // cv::Mat img_tracks = utils::show_tracks_on_anaglyph("feature tracks", 
+  // cv::Mat img_tracks = utils::show_tracks_on_anaglyph("feature tracks",
   //                                                      img_p_.get_ipts(),
   //                                                      img.get_ipts(),
   //                                                      img_p_.get_l_img(),
   //                                                      img.get_l_img());
-  // utils::show_image_points_color("feature tracks", 
+  // utils::show_image_points_color("feature tracks",
   //                                img_tracks,
   //                                ipts_clique,
   //                               'y');
@@ -364,20 +364,20 @@ processLeftDisparity(StereoImage img) {
 };
 
 /* ------------------------------------------------------------------------ */
-std::vector<uchar> StereoVO::                      
-epipolarConstraint(const std::vector<cv::Point2f> & ipts_p, 
+std::vector<uchar> StereoVO::
+epipolarConstraint(const std::vector<cv::Point2f> & ipts_p,
                    const std::vector<cv::Point2f> & ipts,
                    CameraInfo & info_p,
                    CameraInfo & info)
 {
   //compute essential
   std::vector<uchar> inliers;
-  cv::findEssentialMat(ipts_p, 
-                       ipts, 
-                       info_p.projectionMatrix3x3(), 
-                       cv::RANSAC, 
-                       0.99, 
-                       1.0, 
+  cv::findEssentialMat(ipts_p,
+                       ipts,
+                       info_p.projectionMatrix3x3(),
+                       cv::RANSAC,
+                       0.99,
+                       1.0,
                        inliers);
 
   return inliers;
@@ -401,9 +401,9 @@ compute_clique(StereoImage img, float delta) {
           }
 
           //distance between i and j at k and k-1
-          float d_k   = utils::dist(img.get_opts()[i], 
+          float d_k   = utils::dist(img.get_opts()[i],
                                     img.get_opts()[j]);
-          float d_km1 = utils::dist(img_p_.get_opts()[i], 
+          float d_km1 = utils::dist(img_p_.get_opts()[i],
                                     img_p_.get_opts()[j]);
 
           //add entry to adjacency matrix
@@ -503,11 +503,11 @@ hack_require_small_motion(const cv::Mat & delta) {
     double param_min_ty = -0.5;
     double param_min_tz = -0.5;
 
-    if(tx < param_max_tx && 
-       ty < param_max_ty && 
-       tz < param_max_tz && 
-       tx > param_min_tx && 
-       ty > param_min_ty && 
+    if(tx < param_max_tx &&
+       ty < param_max_ty &&
+       tz < param_max_tz &&
+       tx > param_min_tx &&
+       ty > param_min_ty &&
        tz > param_min_tz)
     {
         return delta;
@@ -524,7 +524,7 @@ hack_require_small_motion(const cv::Mat & delta) {
 
 // }
 
-/* ------------------------------------------------------------------------ */ 
+/* ------------------------------------------------------------------------ */
 // void _compute_residuals(const std::vector<cv::Point2f> & kpts)
 // {
 
