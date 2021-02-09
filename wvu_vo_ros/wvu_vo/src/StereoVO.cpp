@@ -114,7 +114,7 @@ processLeftRight(StereoImage img) {
                      0.5,
                      0.99,
                      inliers_ransac,
-                     CV_EPNP
+                     1 //CV_EPNP
                      );
 
   //estimate motion iterative
@@ -306,7 +306,7 @@ processLeftDisparity(StereoImage img) {
                      0.5,
                      0.99,
                      inliers_ransac,
-                     CV_EPNP
+                     1  //CV_EPNP
                      );
   // std::cout << "end solvePnPRansac\n";
 

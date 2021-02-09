@@ -27,8 +27,8 @@ tracker:
   max_age: 15
 
 frame_ids:
-  camera_frame_id: "scout_1_tf/left_camera_optical"
-  base_frame_id: "scout_1_tf/base_footprint"
+  camera_frame_id: "small_scout_1_left_camera_optical"
+  base_frame_id: "small_scout_1_base_footprint"
 
 vo:
   publish_tracks: true
