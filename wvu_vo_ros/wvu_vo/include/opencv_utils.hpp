@@ -14,7 +14,8 @@
 #define OPENCV_UTILS_HPP
 
 #include <opencv2/opencv.hpp>
-#include <opencv/highgui.h> 
+// #include <opencv/highgui.h> 
+#include <opencv2/highgui/highgui_c.h>
 // #include <opencv2/xfeatures2d.hpp>
 
 // #include <fstream>
