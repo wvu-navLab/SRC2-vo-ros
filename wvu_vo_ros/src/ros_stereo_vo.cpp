@@ -445,7 +445,7 @@ publishPose() {
   //ODOM
   nav_msgs::Odometry odom;
   odom.header.stamp = time_stamp_;
-  odom.header.frame_id = "vo";
+  odom.header.frame_id = "iris/odom"; // "vo"
   odom.child_frame_id = base_frame_id_;
   odom.pose = pose_with_covariance;
   odom.twist = twist_with_covariance;
