@@ -9,6 +9,8 @@
 //-----------------------------------------------------------------------------
 
 #include <StereoVO.hpp>
+#include <eigen3/Eigen/Dense>
+
 
 namespace VO
 {
@@ -255,6 +257,7 @@ processLeftDisparity(StereoImage img) {
   std::vector<cv::Point2f> ipts_clique = img.get_l_Image().get_ipts();
   std::vector<cv::Point2f> ipts_clique_p = img_p_.get_l_Image().get_ipts();
   std::vector<cv::Point3f> opts_clique = img_p_.get_l_Image().get_opts();
+  std::vector<cv::Point2f> ipts_clique_out = img_p_.get_l_Image().get_ipts();
   std::vector<int> clique = compute_clique(img, 0.1);
   utils::filter_points(ipts_clique, clique);
   utils::filter_points(ipts_clique_p, clique);
@@ -293,7 +296,7 @@ processLeftDisparity(StereoImage img) {
   //(instead of pnp for rotation and translation)
   //estimate motion ransac
   // std::cout << "solvePnPRansac\n";
-  cv::Mat rvec, tvec;
+  cv::Mat rvec, tvec, jacobian, I, Vp;
   std::vector<uchar> inliers_ransac;
   cv::solvePnPRansac(opts_clique,//img_p_.get_l_Image().get_opts(),//tracked_opts_km1_,
                      ipts_clique,//img.get_l_Image().get_ipts(),//tracked_ipts_k_,
@@ -308,8 +311,14 @@ processLeftDisparity(StereoImage img) {
                      inliers_ransac,
                      1  //CV_EPNP
                      );
-  // std::cout << "end solvePnPRansac\n";
+  std::cout << "end solvePnPRansac\n";
 
+
+
+
+// *********************************************************************************
+
+  // std::cout << "solvePnP\n";
   // cv::solvePnP(opts_clique,
   //              ipts_clique,
   //              img.get_l_info().projectionMatrix3x3(),
@@ -320,13 +329,55 @@ processLeftDisparity(StereoImage img) {
   //              CV_ITERATIVE
   //              );
 
+  std::cout << "prjectPoints\n";
+  cv::projectPoints(opts_clique,
+                    rvec,
+                    tvec,
+                    img.get_l_info().projectionMatrix3x3(),
+                    img.get_l_info().distortionCoefficientsZeros(),
+                    ipts_clique_out,
+                    jacobian,
+                    0
+                    );
+
+  
+  std::cout << "\n distCoeff(zeros?) : " << img.get_l_info().distortionCoefficientsZeros();
+  std::cout << "\n jacobian = " << jacobian.size();
+  std::cout << "\n distcoeffSize = " << img.get_l_info().distortionCoefficientsZeros().size();
+  std::cout << "\n opointsSize = " << opts_clique.size();
+  std::cout << "\n iptsJ = " << ipts_clique.size();
+  std::cout << "\n ipts_out = " << ipts_clique_out.size();
   //compute motion (transform from k-1 left to k left)
   delta_ = utils::compose_T(rvec, tvec);
   // delta_ = hack_require_forward_motion(delta_);
   delta_ = hack_require_small_motion(delta_);
+  // std::cout << "\n delta_ : " << delta_;
+  // std::cout << "\n T_ : " << T_;
+
 
   //update pose (transform from 0 left to k left)
   T_ = delta_*T_;
+
+
+  // std::cout << "\n delta_ : " << delta_;
+  // std::cout << "\n T_ : " << T_;
+
+  int jac_rows = jacobian.rows;
+  int jac_cols = jacobian.cols;
+  std::cout << "\n jac_rows : " << jac_rows;
+  std::cout << "\n jac_col : " << jac_cols;
+  // cv::Mat I = jacobian.size();
+  I = cv::Mat::eye(cv::Size(jac_rows,jac_rows), CV_64F);
+  // I= cv::setIdentity(I);
+  // std::cout << "\n newI = " << I;
+  cv::Mat jacobian_T = jacobian.t();
+  std::cout << "\n I size : " << I.size();
+  std::cout << "\n JT size : " << jacobian_T.size();
+  Vp = jacobian*I*jacobian_T;
+  // std::cout << "\n Vp size : " << Vp.size();
+
+
+
 
   /////////////////////////////
   /////////SHOW TRACKS/////////
