@@ -1,7 +1,7 @@
 <launch>
 
   <!-- launch image selector -->
-  <include file="$(find image_selection)/launch/selectScout.launch" />
+  <!-- <include file="$(find image_selection)/launch/selectScout.launch" /> -->
 
   <!-- launch vo -->
   <group ns="small_scout_1">
