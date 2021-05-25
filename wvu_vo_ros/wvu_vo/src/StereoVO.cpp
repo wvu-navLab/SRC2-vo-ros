@@ -9,7 +9,8 @@
 //-----------------------------------------------------------------------------
 
 #include <StereoVO.hpp>
-#include <eigen3/Eigen/Dense>
+// #include <eigen3/Eigen/Dense>
+#include <typeinfo>
 
 
 namespace VO
@@ -257,7 +258,12 @@ processLeftDisparity(StereoImage img) {
   std::vector<cv::Point2f> ipts_clique = img.get_l_Image().get_ipts();
   std::vector<cv::Point2f> ipts_clique_p = img_p_.get_l_Image().get_ipts();
   std::vector<cv::Point3f> opts_clique = img_p_.get_l_Image().get_opts();
-  std::vector<cv::Point2f> ipts_clique_out = img_p_.get_l_Image().get_ipts();
+  cv::Mat ipts_clique_out;// = img_p_.get_l_Image().get_ipts();
+
+  //cv::Point2f(ipts_clique_out.at<double>(i, 0), ipts_clique_out.at<double>(i, 1))
+
+
+
   std::vector<int> clique = compute_clique(img, 0.1);
   utils::filter_points(ipts_clique, clique);
   utils::filter_points(ipts_clique_p, clique);
@@ -296,7 +302,10 @@ processLeftDisparity(StereoImage img) {
   //(instead of pnp for rotation and translation)
   //estimate motion ransac
   // std::cout << "solvePnPRansac\n";
-  cv::Mat rvec, tvec, jacobian, I, Vp;
+  cv::Mat rvec, tvec, jacobian, I, Vp;  //(img.get_l_info().distortionCoefficientsZeros().cols + 10, 2* opts_clique.size()
+  // std::cout << "\n JACsizeInit: " << jacobian.size();
+  // std::cout << "\n jacType INIT: " << typeid(jacobian).name();
+
   std::vector<uchar> inliers_ransac;
   cv::solvePnPRansac(opts_clique,//img_p_.get_l_Image().get_opts(),//tracked_opts_km1_,
                      ipts_clique,//img.get_l_Image().get_ipts(),//tracked_ipts_k_,
@@ -329,6 +338,17 @@ processLeftDisparity(StereoImage img) {
   //              CV_ITERATIVE
   //              );
 
+  // tvec.at<float>(0, 0) = pose.center()[0];
+  // tvec.at<float>(0, 1) = pose.center()[1];
+  // tvec.at<float>(0, 2) = pose.center()[2];
+
+
+
+  // std::cout << "\n jacSize :" << jacobian.size();
+  // std::cout << "\n jacType: " << typeid(jacobian).name();
+  // std::cout << "\n JT size : " << jacobian_T.size();
+  //std::cout << "\n JT type: " << typeid(jacobian_T).name();
+
   std::cout << "prjectPoints\n";
   cv::projectPoints(opts_clique,
                     rvec,
@@ -340,42 +360,119 @@ processLeftDisparity(StereoImage img) {
                     0
                     );
 
-  
-  std::cout << "\n distCoeff(zeros?) : " << img.get_l_info().distortionCoefficientsZeros();
-  std::cout << "\n jacobian = " << jacobian.size();
-  std::cout << "\n distcoeffSize = " << img.get_l_info().distortionCoefficientsZeros().size();
-  std::cout << "\n opointsSize = " << opts_clique.size();
-  std::cout << "\n iptsJ = " << ipts_clique.size();
-  std::cout << "\n ipts_out = " << ipts_clique_out.size();
+  // double IP_ = (ipts_clique_out.at<double>(0),ipts_clique_out.at<double>(1));
+
+  // std::cout << ipts_clique_out.at<double>(0,1) << std::endl;
+
+  std::vector <cv::Point2f> reprojected;
+
+  int jac_rows = jacobian.rows;
+  int jac_cols = jacobian.cols;
+
+  I = cv::Mat::eye(cv::Size(jac_rows,jac_rows), CV_64FC1);
+
+  cv::Mat jacobian_T;
+  jacobian_T  = jacobian.t();
+ 
+
+  std::cout << "\n VP size :" << Vp.size();
+  // std::cout << "\n VP type: " << typeid(Vp).name();
+  Vp = jacobian_T*I*jacobian;
+
+  //cv::Point2f(ipts_clique_out.at<double>(i, 0), ipts_clique_out.at<double>(i, 1))
+  for (int i = 0; i < ipts_clique_out.rows; i++) {
+      reprojected.push_back(cv::Point2f(ipts_clique_out.at<double>(i, 0), ipts_clique_out.at<double>(i, 1)));
+  }
+
+  Sigma = cv::Mat(Vp, cv::Rect(0, 0, 6, 6)).inv();
+  sqrt(Sigma.diag(), std_dev);
+  //cv::Mat std_dev_sum;
+  std::cout << "\n std: " << typeid(std_dev).name();
+  //std::cout << "\n sumType: " << typeid(std_dev_sum).name();
+  // std_dev_sum += std_dev;?
+
+  std::cout << "\n *** Sigma: " << Sigma;
+  std::cout << "\n *** std_dev: " << std_dev;
+
+
+
+
+  //cv::Mat src; // some input image
+  // cv::Mat sigma_new;
+
+  // Convert to double (much faster than a simple for loop)
+  // Sigma.convertTo(sigma_new, CV_64F, 1, 0);
+
+  // double *ptrSig[sigma_new.rows];
+  // for(int i = 0; i < sigma_new.rows; ++i) {
+  //     ptrSig[i] = sigma_new.ptr<double>(i);
+
+  //     for(int j = 0; j < sigma_new.cols; ++j) {
+  //         double value = ptrSig[i][j];
+  //         std::cout << "\n *** value: " << value;
+
+  //     }
+  // }
+
+  //std::cout << "\n *** Dev?? : " << Dev_;
+
+  // std::cout << sqrt(Sigma.diag(), std_dev) << std::endl;
+
+
+  // *****************************************************************************************
+
+  // std::vector<cv::Point3f> M_;
+  // M_ = ipts_clique - opts_clique;
+  // std::cout << "M?? = " << M_;
+
+
+
+  // std::cout << "\n \ndistCoeff(zeros?) : " << img.get_l_info().distortionCoefficientsZeros();
+  // std::cout << "\n jacobian = " << jacobian.size();
+  // std::cout << "\n distcoeffSize = " << img.get_l_info().distortionCoefficientsZeros().size();
+  // std::cout << "\n opointsSize = " << opts_clique.size();
+  // std::cout << "\n iptsJ = " << ipts_clique.size();
+  // std::cout << "\n ipts_out = " << ipts_clique_out.size();
   //compute motion (transform from k-1 left to k left)
   delta_ = utils::compose_T(rvec, tvec);
   // delta_ = hack_require_forward_motion(delta_);
   delta_ = hack_require_small_motion(delta_);
-  // std::cout << "\n delta_ : " << delta_;
-  // std::cout << "\n T_ : " << T_;
+  // std::cout << "\n delta_sz : " << delta_.size();
+  // std::cout << "\n T_sz : " << T_.size();
+  // std::cout << "\n delta type: " << typeid(delta_).name();
+  // std::cout << "\n T_type: " << typeid(T_).name();
 
 
   //update pose (transform from 0 left to k left)
   T_ = delta_*T_;
+  // std::cout << "\n I type: " << typeid(I).name();
+  // std::cout << "\n I type: " << typeid(I).name();
+
 
 
   // std::cout << "\n delta_ : " << delta_;
   // std::cout << "\n T_ : " << T_;
 
-  int jac_rows = jacobian.rows;
-  int jac_cols = jacobian.cols;
-  std::cout << "\n jac_rows : " << jac_rows;
-  std::cout << "\n jac_col : " << jac_cols;
-  // cv::Mat I = jacobian.size();
-  I = cv::Mat::eye(cv::Size(jac_rows,jac_rows), CV_64F);
-  // I= cv::setIdentity(I);
-  // std::cout << "\n newI = " << I;
-  cv::Mat jacobian_T = jacobian.t();
-  std::cout << "\n I size : " << I.size();
-  std::cout << "\n JT size : " << jacobian_T.size();
-  Vp = jacobian*I*jacobian_T;
-  // std::cout << "\n Vp size : " << Vp.size();
+  // int jac_rows = jacobian.rows;
+  // int jac_cols = jacobian.cols;
 
+  // I = cv::Mat::eye(cv::Size(jac_rows,jac_rows), CV_64FC1);
+
+  // cv::Mat jacobian_T;
+  // jacobian_T  = jacobian.t();
+ 
+  // std::cout << "\n VP size :" << Vp.size();
+  // std::cout << "\n VP type: " << typeid(Vp).name();
+
+  // std::cout << "\n jacSize :" << jacobian.size();
+  // std::cout << "\n jacType: " << typeid(jacobian).name();
+  // std::cout << "\n JT size : " << jacobian_T.size();
+  // std::cout << "\n JT type: " << typeid(jacobian_T).name();
+
+
+  // Vp = jacobian_T*I*jacobian;
+  // std::cout << "\n Vp size : " << Vp.size();
+  // std::cout << "\n Vp : " << Vp;
 
 
 

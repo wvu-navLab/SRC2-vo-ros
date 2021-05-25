@@ -28,6 +28,10 @@ namespace VO
 class StereoVO {
   public:
     /// constructors
+
+    cv::Mat Sigma;
+    cv::Mat std_dev;
+
     inline StereoVO(const unsigned int mode)
     : mode_(mode) {
         empty_ = true;
@@ -108,6 +112,7 @@ class StereoVO {
     cv::Mat delta_;      //transform from time step k-1 to k
     int status_;         //flag for VO status
     Tracker tracker_;    //feature tracker
+    //cv::Mat Sigma;
 
     //variables for debugging
     StereoImage img_draw_; 

@@ -102,6 +102,7 @@ class ROSStereoVO : public StereoVO {
     void publishDisparity();
     void publishPose();
     void publishTracks();
+    void publishCov();
 
     /* ------------------------------------------------------------------------ */
     //TODO: clean up implementation of these options

@@ -407,6 +407,8 @@ publishPose() {
   pose_with_covariance.pose.orientation.z = pose_transform.rotation.z;
   pose_with_covariance.pose.orientation.w = pose_transform.rotation.w;
 
+
+
   //delta of camera (transform from k=k to k=k-1)
   tf::Matrix3x3 R_delta(delta_.at<double>(0,0),
                         delta_.at<double>(0,1),
@@ -441,6 +443,13 @@ publishPose() {
   twist_with_covariance.twist.angular.x = 0; //not used
   twist_with_covariance.twist.angular.y = 0; //not used
   twist_with_covariance.twist.angular.z = 0; //not used
+  twist_with_covariance.covariance[0] = Sigma.at<double>(0,0);
+  twist_with_covariance.covariance[7] = Sigma.at<double>(1,1);
+  twist_with_covariance.covariance[14] = Sigma.at<double>(2,2);
+  twist_with_covariance.covariance[21] = Sigma.at<double>(3,3);
+  twist_with_covariance.covariance[28] = Sigma.at<double>(4,4);
+  twist_with_covariance.covariance[35] = Sigma.at<double>(5,5);
+  std::cout << "\n Sigma size :" << Sigma.size();
 
   //ODOM
   nav_msgs::Odometry odom;
@@ -452,6 +461,22 @@ publishPose() {
 
   odom_pub_.publish(odom);
 }
+
+
+
+void ROSStereoVO::
+publishCov() {
+
+
+
+
+
+}
+
+
+
+
+
 
 
 /* ------------------------------------------------------------------------ */
