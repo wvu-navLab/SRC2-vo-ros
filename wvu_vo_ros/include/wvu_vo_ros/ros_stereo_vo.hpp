@@ -140,6 +140,7 @@ class ROSStereoVO : public StereoVO {
     //
     ros::Time time_stamp_;
     ros::Time time_stamp_previous_;
+    std::string robot_name_;
     std::string base_frame_id_;
     std::string camera_frame_id_;
 

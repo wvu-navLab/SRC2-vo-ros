@@ -53,8 +53,11 @@ load_parameters() {
 
   //frame ids
   //TODO: get these automatically instead of requiring as parameters
+  nh_.getParam("robot_name", robot_name_);
   nh_.getParam("frame_ids/camera_frame_id", camera_frame_id_);
+  camera_frame_id_ = robot_name_ + camera_frame_id_;
   nh_.getParam("frame_ids/base_frame_id", base_frame_id_);
+  base_frame_id_ = robot_name_ + base_frame_id_;
 
   //parameters for debugging
   nh_.getParam("vo/publish_tracks", publish_tracks_);
@@ -340,6 +343,9 @@ publishDisparity() {
     cv::Mat temp_disp = stereo_img_.get_disp();
     temp_disp.convertTo(disp8, CV_8U, 1.0/(bm_params_.num_disparities*16)*256.0);
     sensor_msgs::ImagePtr temp_disp_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", disp8).toImageMsg();
+    temp_disp_msg->header.stamp = time_stamp_;
+    temp_disp_msg->header.frame_id = camera_frame_id_;
+
     disparity_display_pub_.publish(temp_disp_msg);
 
     // ros::spinOnce();

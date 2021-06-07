@@ -1,0 +1,16 @@
+<launch>
+
+  <!-- launch image selector -->
+  <include file="$(find image_selection)/launch/image_selector.launch" />
+
+  <!-- launch vo -->
+  <node pkg="wvu_vo_ros"
+        name="ros_stereo_vo_node"
+        type="ros_stereo_vo_node"
+        respawn= "true"
+        output="screen">
+  </node>
+
+  <rosparam command="load" file="$(find wvu_vo_ros)/config/parameters.yaml"/>
+
+</launch>
