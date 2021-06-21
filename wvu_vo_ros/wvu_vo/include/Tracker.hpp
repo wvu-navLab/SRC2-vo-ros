@@ -23,6 +23,9 @@ namespace VO
 class Tracker {
   public:
     /// constructors
+    cv::Mat U_, V_, W_, Jac_, Jac_k, Jac_km1, P_, S_, disp_, l_img_k, l_img_km1, r_img_k, r_img_km1;
+    double d_k, d_km1;
+    double kpt_ul, kpt_ur, kpt_vl, kpt_vr;
     Tracker() {};
 
 
@@ -43,6 +46,16 @@ class Tracker {
     /* ------------------------------------------------------------------------ */
     //track features between frames
     void stereoTrack(StereoImage & img_km1, StereoImage & img_k);
+    /* ------------------------------------------------------------------------ */
+
+    //select covariance estimation method
+    void stereoComputeCovariance(StereoImage & img_km1, StereoImage & img_k);
+
+     /* ------------------------------------------------------------------------ */
+    void stereoComputeCovarianceDellaert(StereoImage & img_km1, StereoImage & img_k);
+
+    /* ------------------------------------------------------------------------ */
+    void stereoComputeCovarianceMatthies(StereoImage & img_km1, StereoImage & img_k);
 
 
 

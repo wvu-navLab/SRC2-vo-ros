@@ -17,6 +17,7 @@
 #include <Types.hpp>
 #include <CameraInfo.hpp>
 #include <Image.hpp>
+// #include <StereoVO.hpp>
 
 namespace VO
 {
@@ -24,6 +25,7 @@ namespace VO
 class StereoImage {
   public:
     /// constructors
+    cv::Mat P_i_;
     /* ------------------------------------------------------------------------ */
     inline StereoImage() {};
 
@@ -120,8 +122,10 @@ class StereoImage {
     cv::Mat                   & get_r_desc() { return r_img_.get_desc(); };
     std::vector<cv::Point3f>  & get_opts  () { return l_img_.get_opts(); };
     std::vector<cv::Point2f>  & get_ipts  () { return l_img_.get_ipts(); };
+    std::vector<cv::Point2f>  & get_ipts_r() { return r_img_.get_ipts_r(); };
     std::vector<int>          & get_ages  () { return l_img_.get_ages(); };
     cv::Mat                   & get_disp  () { return disp_;   };
+    // cv::Mat                   & triangulate() {return P_i_;     };
     // cv::Mat                   & get_img3d () { return img3d_;  };
 
     Image & get_l_Image () { return l_img_; };
@@ -132,7 +136,7 @@ class StereoImage {
     //return true if disparity image is computed and false if disparity image 
     //has not been computed
     bool is_disparity_computed();
-
+    void triangulate();
     /* ------------------------------------------------------------------------ */
     //sets block matcher params and adds trackbars to image, the trackbars will
     //update the values passed to the tuner function
@@ -161,6 +165,8 @@ class StereoImage {
     //computes disparity image using block matcher (does not compute 3d points)
     //TODO: add support for both cpu and gpu dense matching
     void denseMatching();
+    // cv::Mat triangulate();// {return P_i_;};
+
 
     /* ------------------------------------------------------------------------ */
     //TODO: replace this method with method for converting disparity to 3D point
@@ -190,7 +196,7 @@ class StereoImage {
     /// methods
     /* ------------------------------------------------------------------------ */
     //triangulates keypoints in left/right images  (result stored in opts_)
-    void triangulate();
+    // void triangulate();
 
     /* ------------------------------------------------------------------------ */
     //compute transformation Q that takes image points and depth to 3D points:

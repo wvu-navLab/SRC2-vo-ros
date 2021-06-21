@@ -23,11 +23,12 @@
 #include <tf/transform_broadcaster.h>
 #include <nav_msgs/Odometry.h>
 #include <stereo_msgs/DisparityImage.h>
-
 #include <wvu_vo_ros/SetPose.h>
 
+#include <Tracker.hpp>
 #include <Types.hpp>
 #include <StereoVO.hpp>
+#include <StereoImage.hpp>
 
 namespace VO
 {
@@ -41,11 +42,12 @@ class ROSStereoVO : public StereoVO {
                       sensor_msgs::CameraInfo> SyncPolicy;
 
   public:
+    // VO::StereoImage P_i_;
     /* ------------------------------------------------------------------------ */
     inline ROSStereoVO(ros::NodeHandle & nh)
     : nh_(nh),
-      l_img_sub(nh_, "camera/left/image_raw", 1),
-      r_img_sub(nh_, "camera/right/image_raw", 1),
+      l_img_sub(nh_, "camera/left/image_rect", 1),
+      r_img_sub(nh_, "camera/right/image_rect", 1),
       l_info_sub(nh_, "camera/left/camera_info", 1),
       r_info_sub(nh_, "camera/right/camera_info", 1),
       // l_img_sub(nh_, "camera/left_sel/image_raw", 1),
@@ -150,7 +152,6 @@ class ROSStereoVO : public StereoVO {
 
     /* ------------------------------------------------------------------------ */
     VO::StereoImage stereo_img_;
-
     /* ------------------------------------------------------------------------ */
     BMParameters bm_params_;
 

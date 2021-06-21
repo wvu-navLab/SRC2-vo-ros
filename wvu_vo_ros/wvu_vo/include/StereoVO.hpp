@@ -25,12 +25,13 @@
 namespace VO
 {
 
-class StereoVO {
+class StereoVO  {
   public:
     /// constructors
 
     cv::Mat Sigma;
     cv::Mat std_dev;
+    //cv::Mat P_i_;
 
     inline StereoVO(const unsigned int mode)
     : mode_(mode) {

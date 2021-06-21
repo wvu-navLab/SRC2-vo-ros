@@ -41,13 +41,14 @@ class Image {
 
     ///getters (ish)
     /* ------------------------------------------------------------------------ */
-    cv::Mat                   & get_img () { return img_;  };
-    CameraInfo                & get_info() { return info_; };
-    std::vector<cv::KeyPoint> & get_kpts() { return kpts_; };
-    cv::Mat                   & get_desc() { return desc_; };
-    std::vector<cv::Point3f>  & get_opts() { return opts_; };
-    std::vector<cv::Point2f>  & get_ipts() { return ipts_; };
-    std::vector<int>          & get_ages() { return ages_; };
+    cv::Mat                   & get_img   () { return img_;    };
+    CameraInfo                & get_info  () { return info_;   };
+    std::vector<cv::KeyPoint> & get_kpts  () { return kpts_;   };
+    cv::Mat                   & get_desc  () { return desc_;   };
+    std::vector<cv::Point3f>  & get_opts  () { return opts_;   };
+    std::vector<cv::Point2f>  & get_ipts  () { return ipts_;   };
+    std::vector<cv::Point2f>  & get_ipts_r() { return ipts_r_; };
+    std::vector<int>          & get_ages  () { return ages_;   };
     // cv::Mat                   & get_disp() { return disp_; };
 
   protected:
@@ -61,6 +62,7 @@ class Image {
     cv::Mat                   desc_; //image descriptors
     std::vector<cv::Point3f>  opts_; //object points (as XYZ coordinates)
     std::vector<cv::Point2f>  ipts_; //image points 
+    std::vector<cv::Point2f>  ipts_r_; //image points right img
     std::vector<int>          ages_; //age of tracked features
 
     /* ------------------------------------------------------------------------ */

@@ -45,6 +45,8 @@ process(StereoImage & stereo_img)
       exit(1);
       break;
   }
+  
+  // std::cout << " PPPPPIIIIIIII" << stereo_img.P_i_;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -67,6 +69,7 @@ processLeftRight(StereoImage img) {
   utils::sharpen(img.get_r_img());
 
   //triangulate
+  std::cout << "************process LR ------> sparseMatching";
   img.sparseMatching();
 
   //check if initial image, if so add data and skip
@@ -83,6 +86,7 @@ processLeftRight(StereoImage img) {
 
   //add matched 2d/3d points
   img.get_ipts() = utils::filter_matches_pt2f(img.get_l_kpts(), mP, 0);
+  img.get_ipts_r() = utils::filter_matches_pt2f(img.get_r_kpts(),mP, 0);
   img_p_.get_ipts() = utils::filter_matches_pt2f(img_p_.get_l_kpts(), mP, 1);
   utils::filter_matches(img_p_.get_opts(), mP, 1);
 
@@ -102,6 +106,8 @@ processLeftRight(StereoImage img) {
   utils::delete_outliers(img_p_.get_ipts(), inliers_epipolar);
   utils::delete_outliers(img_p_.get_opts(), inliers_epipolar);
   utils::delete_outliers(img.get_ipts(), inliers_epipolar);
+  utils::delete_outliers(img.get_ipts_r(), inliers_epipolar);
+
 
   //estimate motion ransac
   cv::Mat rvec, tvec;
@@ -124,6 +130,8 @@ processLeftRight(StereoImage img) {
   utils::delete_outliers(img_p_.get_ipts(), inliers_ransac);
   utils::delete_outliers(img_p_.get_opts(), inliers_ransac);
   utils::delete_outliers(img.get_ipts(), inliers_ransac);
+  utils::delete_outliers(img.get_ipts_r(), inliers_ransac);
+
 
   // cv::solvePnP(img_p_.get_opts(),
   //              img.get_ipts(),
@@ -151,6 +159,7 @@ processLeftRight(StereoImage img) {
 
   //update vars
   img_p_ = img;
+  std::cout << "+++++++++++++finished ProcessLR";
 
   return;
 };
@@ -177,6 +186,7 @@ processLeftDisparity(StereoImage img) {
     // std::cout << "processLeftDisparity: denseMatching\n";
     img.denseMatching();
   }
+  img.sparseMatching();
 
 
   /////////////////////////////////
@@ -223,6 +233,11 @@ processLeftDisparity(StereoImage img) {
 
   tracker_.stereoTrack(img_p_, img);
 
+
+
+  /// we have features here, add covar compute
+
+
   //////////////////////////////////////////////////////
   /////////CHECK IF ENOUGH POINTS FOR TRACKING//////////
   //////////////////////////////////////////////////////
@@ -256,10 +271,11 @@ processLeftDisparity(StereoImage img) {
   /////////////////////////////////
   // std::cout << "compute_clique\n";
   std::vector<cv::Point2f> ipts_clique = img.get_l_Image().get_ipts();
+  std::vector<cv::Point2f> ipts_clique_R= img.get_r_Image().get_ipts_r();
   std::vector<cv::Point2f> ipts_clique_p = img_p_.get_l_Image().get_ipts();
   std::vector<cv::Point3f> opts_clique = img_p_.get_l_Image().get_opts();
   cv::Mat ipts_clique_out;// = img_p_.get_l_Image().get_ipts();
-
+  // std::cout << "ipts_clique: " << ipts_clique;
   //cv::Point2f(ipts_clique_out.at<double>(i, 0), ipts_clique_out.at<double>(i, 1))
 
 
@@ -296,6 +312,13 @@ processLeftDisparity(StereoImage img) {
   }
 
   /////////////////////////////////
+  /////COVARIANCE CALCULATION//////
+  /////////////////////////////////
+  tracker_.stereoComputeCovariance(img_p_, img);
+
+
+
+  /////////////////////////////////
   /////////ESTIMATE MOTION/////////
   /////////////////////////////////
   //TODO: use essential matrix for rotation and pnp for translation
@@ -325,7 +348,7 @@ processLeftDisparity(StereoImage img) {
 
 
 
-// *********************************************************************************
+ // *********************************************************************************
 
   // std::cout << "solvePnP\n";
   // cv::solvePnP(opts_clique,
@@ -349,7 +372,7 @@ processLeftDisparity(StereoImage img) {
   // std::cout << "\n JT size : " << jacobian_T.size();
   //std::cout << "\n JT type: " << typeid(jacobian_T).name();
 
-  std::cout << "prjectPoints\n";
+  // std::cout << "prjectPoints\n";
   cv::projectPoints(opts_clique,
                     rvec,
                     tvec,
@@ -364,6 +387,8 @@ processLeftDisparity(StereoImage img) {
 
   // std::cout << ipts_clique_out.at<double>(0,1) << std::endl;
 
+  // manually compute jacobian of f. (XYZ points) *********************************************
+
   std::vector <cv::Point2f> reprojected;
 
   int jac_rows = jacobian.rows;
@@ -375,9 +400,9 @@ processLeftDisparity(StereoImage img) {
   jacobian_T  = jacobian.t();
  
 
-  std::cout << "\n VP size :" << Vp.size();
+  // std::cout << "\n VP size :" << Vp.size();
   // std::cout << "\n VP type: " << typeid(Vp).name();
-  Vp = jacobian_T*I*jacobian;
+  Vp = jacobian_T*jacobian;
 
   //cv::Point2f(ipts_clique_out.at<double>(i, 0), ipts_clique_out.at<double>(i, 1))
   for (int i = 0; i < ipts_clique_out.rows; i++) {
@@ -386,13 +411,15 @@ processLeftDisparity(StereoImage img) {
 
   Sigma = cv::Mat(Vp, cv::Rect(0, 0, 6, 6)).inv();
   sqrt(Sigma.diag(), std_dev);
+  // Sigma = P_i_;
+  // std::cout<<"\n*+*+*+ P_i_" << P_i_;
   //cv::Mat std_dev_sum;
-  std::cout << "\n std: " << typeid(std_dev).name();
-  //std::cout << "\n sumType: " << typeid(std_dev_sum).name();
-  // std_dev_sum += std_dev;?
+  // std::cout << "\n std: " << typeid(std_dev).name();
+  // //std::cout << "\n sumType: " << typeid(std_dev_sum).name();
+  // // std_dev_sum += std_dev;?
 
-  std::cout << "\n *** Sigma: " << Sigma;
-  std::cout << "\n *** std_dev: " << std_dev;
+  // std::cout << "\n *** Sigma: " << Sigma;
+  // std::cout << "\n *** std_dev: " << std_dev;
 
 
 

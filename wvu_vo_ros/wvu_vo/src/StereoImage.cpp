@@ -76,13 +76,30 @@ triangulate() {
 	l_img_.get_opts().clear();
 	for(size_t i=0; i<l_img_.get_kpts().size(); i++)
 	{
+    // disparity is horizontal only (l_pt.x - r_pt.x) true if rectified ********
+
+// if(i>0)
+//   {
+//     double prev_disparity = l_img_.get_kpts()[i-1].pt.x
+//     - r_img_.get_kpts()[i-1].pt.x;
+
+//     double prev_offset = fabs(l_img_.get_kpts()[i-1].pt.y 
+//       - r_img_.get_kpts()[i-1].pt.y);
+//   }
+
 		double disparity = l_img_.get_kpts()[i].pt.x 
       - r_img_.get_kpts()[i].pt.x;
+    // offset is vertical disparity
 		double offset = fabs(l_img_.get_kpts()[i].pt.y 
       - r_img_.get_kpts()[i].pt.y);
+    // std::cout << "\n l_img_Y_kpt"<< l_img_.get_kpts()[i].pt.y;
+    // std::cout << "\n r_img_Y_kpt"<< r_img_.get_kpts()[i].pt.y;
+
     
 		uchar is_point_valid = 0;
-
+    // std::cout << "\n disparity: " << disparity;
+    // std::cout << "\n offset: " << offset;
+    // std::cout << "\n ********** TRIANGULATE************";
 		//check disparity range 
     //TODO: this should be a parameter for sparse matching
     //      maybe, overload and add as argument to triangulate
@@ -93,24 +110,147 @@ triangulate() {
       //      maybe, overload and add as argument to triangulate
 			if(offset < 5 && offset > -5)
 			{
+        // add loop to add sigma points
 				double cx = (double) 
           l_img_.get_info().getProjectionMatrix().at<double>(0,2);
 				double cy = (double) 
           l_img_.get_info().getProjectionMatrix().at<double>(1,2);
 				double sx = (double) 
-          l_img_.get_info().getProjectionMatrix().at<double>(0,0);
+          l_img_.get_info().getProjectionMatrix().at<double>(0,0); // sx = sy = focal length
 				double sy = (double) 
           l_img_.get_info().getProjectionMatrix().at<double>(1,1);
 				double bl = (double) 
           (-r_img_.get_info().getProjectionMatrix().at<double>(0,3)
           /r_img_.get_info().getProjectionMatrix().at<double>(0,0));
 
+
+        // std::cout <<"\ndisparity old: " << disparity;
 				double z = sx/disparity*bl;
 				double x = (l_img_.get_kpts()[i].pt.x-cx)/sx*z;
 				double y = (l_img_.get_kpts()[i].pt.y-cy)/sy*z;
+        // std::cout <<"sx = "<< sx;
+        // std::cout <<"bl = "<< bl;
+        // point error and matching error approximations (Dellaert's ref uses sigma_m = 0.06)
+        double sigma_p = 0.1;
+        double sigma_m = 0.1;
+        cv::Mat U_i, Jac_p;
+
+        // covariance calculation previous point****************************
+        // if(i>0)
+        // {
+
+
+        //   double prev_disparity = l_img_.get_kpts()[i-1].pt.x
+        //   - r_img_.get_kpts()[i-1].pt.x;
+
+        //   double prev_offset = fabs(l_img_.get_kpts()[i-1].pt.y 
+        //     - r_img_.get_kpts()[i-1].pt.y);
+
+        //   double kpt_ul_p = l_img_.get_kpts()[i-1].pt.x;
+        //   double kpt_ur_p = r_img_.get_kpts()[i-1].pt.x;
+        //   double kpt_vl_p = l_img_.get_kpts()[i-1].pt.y;
+        //   double kpt_vr_p = r_img_.get_kpts()[i-1].pt.y;
+
+        //   Jac_p =  (cv::Mat_<double>(3,3) <<
+        //   bl/prev_disparity, 0.0, -(kpt_ul_p*bl)/pow(prev_disparity,2), 
+        //   0.0, bl/prev_disparity, -(kpt_vr_p*bl)/pow(prev_disparity,2), 
+        //   0.0, 0.0, -(sx*bl)/pow(prev_disparity,2)); 
+        //   std::cout << "\n -----prev Jacobian------";       
+        //   std::cout << "\n Jac p = " << Jac_p;
+
+        //   // cv::Mat S_i_;
+        //   // // covariance of stereo measurements in disparity space: S_i*********
+        //   // S_i_ = (cv::Mat_<double>(3,3) <<
+        //   //   sigma_p, 0.0, 0.0,
+        //   //   0.0, sigma_p, 0.0,
+        //   //   0.0, 0.0, sigma_m);
+
+        //   // // Dellaert: covariance matrix of reconstructed 3D point propagation
+        //   // cv::Mat P_p_;
+        //   // P_p_ = Jac_p*S_i_*Jac_p.t();
+        //   // std::cout << "\n +++++++++++++ prev - COVARIANCE++++++++++++++";
+        //   // std::cout << "\n Pp = " << P_p_;
+
+        //   // // matthies approx
+          
+        //   //U_i = Jac_p*Jac_p.t();
+        //   //std::cout << "UI ----------- " << typeid(U_i).name();
+        
+        // }
+        
+
+
+        // covariance calculation current point ___________________________________________________________________
+        cv::Mat Jac_, Jac_m;
+        double kpt_ul = l_img_.get_kpts()[i].pt.x;
+        double kpt_ur = r_img_.get_kpts()[i].pt.x;
+        double kpt_vl = l_img_.get_kpts()[i].pt.y;
+        double kpt_vr = r_img_.get_kpts()[i].pt.y;
+        // std::cout << "sx (fx): "<< sx;
+        // std::cout << "sy (fy): "<< sy;
+
+        //jacobian of 3d point
+        Jac_ =  (cv::Mat_<double>(3,3) <<
+                bl/disparity, 0.0, -(kpt_ul*bl)/pow(disparity,2), 
+                0.0, bl/disparity, -(kpt_vr*bl)/pow(disparity,2), 
+                0.0, 0.0, -(sx*bl)/pow(disparity,2)); 
+
+        Jac_m = (cv::Mat_<double>(3,4) <<
+                -(2*bl*kpt_ur)/pow(disparity,2),  0.0, (2*bl*kpt_ur)/pow(disparity,2), 0.0,
+                -(bl*(kpt_vl + kpt_vr)/pow(disparity,2)), bl/(disparity), (bl*(kpt_vl + kpt_vr)/pow(disparity,2)),  bl/(disparity),
+                -(2*bl)/pow(disparity,2), 0.0, 2*bl/pow(disparity,2), 0.0);
+
+        // std::cout << "\n -----Jacobian------";       
+        // std::cout << "\n Jac OLD = " << Jac_;
+        // std::cout << "\n Jac_m = " << Jac_m;
+
+        //std::cout << "\n JacT = " << Jac_.t();
+
+
+
+        // Dellaert: covariance matrix of reconstructed 3D point propagation
+        cv::Mat V_i, W_i, S_i_;
+        S_i_ = (cv::Mat_<double>(3,3) <<
+          sigma_p, 0.0, 0.0,
+          0.0, sigma_p, 0.0,
+          0.0, 0.0, sigma_m);
+
+        //cv::Mat U_i;
+        //U_i = Jac_p*Jac_p.t();
+        // std::cout << "\njac ----------- " << typeid(S_i_).name();
+
+        // std::cout << "\nSI ----------- " << typeid(S_i_).name();
+        // std::cout << "\nSI ----------- " << S_i_;
+
+        //std::cout << "\nj ----------- " << typeid(S_i_).name();
+
+        // std::cout << "\nPI ----------- " << typeid(P_i_).name();
+        //std::cout << "VI ----------- " << typeid(V_i).name();
+
+        // cv::Mat P_i_;
+        P_i_ = Jac_.t()*S_i_*Jac_;
+        // // std::cout << "\n +++++++++++++COVARIANCE++++++++++++++";
+        // // std::cout << "\n Pi = " << P_i_;
+
+        // // matthies approx
+
+        // V_i = Jac_*Jac_.t();
+        //std::cout << "VI ----------- " << typeid(V_i).name();
+
+
+        // W_i = (U_i + V_i);//.inv();
+        // std::cout << "\n ****U_i = " << U_i;
+        // std::cout << "\n ****V_i = " << V_i;
+        // std::cout << "\n ****W_i = " << W_i;
+        // std::cout << "\n ****P_i = " << P_i_;
+
+        
+
 
 				l_img_.get_opts().push_back( cv::Point3f(x,y,z) );
 				is_point_valid = 1;
+        // std::cout <<"\n $$$$$$   P_i_ : " << P_i_;
+        // return P_i_;
 			}
 		}
 		valid_points.push_back(is_point_valid);
@@ -120,7 +260,7 @@ triangulate() {
 	utils::delete_outliers(l_img_.get_desc(), valid_points);
 	utils::delete_outliers(l_img_.get_kpts(), valid_points);
 	// utils::delete_outliers(r_desc_, valid_points); //not typically used
-	// utils::delete_outliers(r_kpts_, valid_points); //not typically used
+	// utils::delete_outliers(r_kpts_, valid_points); //not typically used  
 };
 
 /* ------------------------------------------------------------------------ */
@@ -214,10 +354,19 @@ ipt_to_opt(const cv::Point2f & ipt,
 
     //get disparity (carefule with disparity type! CV_S16 is expected!)
     double disparity = disp_.at<short>(ipt.y, ipt.x)/16;
+    // std::cout << "\ndisparity: " << disparity;
 
     if(disparity < 1) { //if disparity < 1 pixel ignore
         return false;
     }
+
+    // get left and right ipts (image coord)
+    std::vector<cv::Point2f> ipts_clique_l = l_img_.get_ipts();
+    std::vector<cv::Point2f> ipts_clique_r = r_img_.get_ipts_r();
+
+    // std::cout << "\nipts_L: " << ipts_clique_l;
+    // std::cout << "\nipts_R: " << ipts_clique_r;
+
 
     //compute 3D point from disparity
     double cx = (double) l_img_.get_info().getProjectionMatrix().at<double>(0,2);
@@ -230,6 +379,11 @@ ipt_to_opt(const cv::Point2f & ipt,
     opt.z = sx/disparity*bl;
     opt.x = (ipt.x-cx)/sx*opt.z;
     opt.y = (ipt.y-cy)/sy*opt.z;
+    // std::cout << "z = " << opt.z;
+    // std::cout << "x = " << opt.zx;
+    // std::cout << "y = " << y;
+
+
 
     if(opt.z > 1000) { 
         return false; //return false if no disparity

@@ -12,6 +12,7 @@
 #include <wvu_vo_ros/ros_stereo_vo.hpp>
 
 #include <cv_bridge/cv_bridge.h>
+// #include <StereoImage.hpp>
 
 namespace VO
 {
@@ -217,13 +218,14 @@ stereo_callback(const sensor_msgs::ImageConstPtr      & l_img,
                          r_info->P[7]);
 
   //create stereo image
+  // VO::StereoImage triangulate();
+  // std::cout << "\n traingulate ----- P_I : " << stereo_img_.P_i_;
   cv::Mat l_img_cv = l_img_temp->image.clone();
   cv::Mat r_img_cv = r_img_temp->image.clone();
   stereo_img_ = VO::StereoImage(l_img_cv,
                                 r_img_cv,
                                 l_info_temp,
                                 r_info_temp);
-
   //TODO: instead, a service or another node should be used for testing
   //      frontend parameters
   if(config_tune_block_matcher==1) {
@@ -274,8 +276,19 @@ stereo_callback(const sensor_msgs::ImageConstPtr      & l_img,
     publishDisparity();
   }
 
+  // std::cout <<"\n ~~~~~~~   P_i_ : " << VO::StereoImage::P_i_;
+  // stereo_img_.triangulate();  
+  // cv::Mat PI_;
+  
+  // std::cout << "\n traingulate ----- P_I : " << PI_;
+
+
+
+
   //estimate motion
   process(stereo_img_);
+  // std::cout <<"\n ~~~~~~~  s_i_ P_i_ : " << stereo_img_.P_i_;
+  // std::cout <<"\n new P_ ========= " << tracker_.P_;
 
   //publish pose
   //only publish if transform is valid
@@ -290,6 +303,7 @@ stereo_callback(const sensor_msgs::ImageConstPtr      & l_img,
   else {
 
   }
+  // std::cout << "PI size:: " << stereo_img_.P_i_.size();
 
   //debug
   // cv::waitKey(1);
@@ -309,6 +323,8 @@ publishDisparity() {
    // {
     stereo_msgs::DisparityImagePtr disp_msg = boost::make_shared<stereo_msgs::DisparityImage>();
     cv::Mat cv_image;
+
+
     cv_image = stereo_img_.get_disp();
     disp_msg->min_disparity = bm_params_.min_disparity;
     disp_msg->max_disparity = bm_params_.min_disparity + bm_params_.num_disparities;
@@ -406,7 +422,13 @@ publishPose() {
   pose_with_covariance.pose.orientation.y = pose_transform.rotation.y;
   pose_with_covariance.pose.orientation.z = pose_transform.rotation.z;
   pose_with_covariance.pose.orientation.w = pose_transform.rotation.w;
-
+  pose_with_covariance.covariance[0] = tracker_.P_.at<double>(0,0);
+  pose_with_covariance.covariance[7] = tracker_.P_.at<double>(1,1);
+  pose_with_covariance.covariance[14] = tracker_.P_.at<double>(2,2);
+  // std::cout << " \n ~~~~~~ P_  =  " << tracker_.P_;
+  // std::cout << " \n ~~~~~~ d_k  =  " << tracker_.d_k;
+  // std::cout << " \n ~~~~~~ Jac_  =  " <<tracker_.Jac_;
+  // std::cout << " \n ~~~~~~ kpt_vl =  " << tracker_.kpt_vl;
 
 
   //delta of camera (transform from k=k to k=k-1)
@@ -443,13 +465,17 @@ publishPose() {
   twist_with_covariance.twist.angular.x = 0; //not used
   twist_with_covariance.twist.angular.y = 0; //not used
   twist_with_covariance.twist.angular.z = 0; //not used
-  twist_with_covariance.covariance[0] = Sigma.at<double>(0,0);
-  twist_with_covariance.covariance[7] = Sigma.at<double>(1,1);
-  twist_with_covariance.covariance[14] = Sigma.at<double>(2,2);
-  twist_with_covariance.covariance[21] = Sigma.at<double>(3,3);
-  twist_with_covariance.covariance[28] = Sigma.at<double>(4,4);
-  twist_with_covariance.covariance[35] = Sigma.at<double>(5,5);
-  std::cout << "\n Sigma size :" << Sigma.size();
+  // twist_with_covariance.covariance[0] = tracker_.P_.at<double>(0,0);
+  // twist_with_covariance.covariance[7] = tracker_.P_.at<double>(1,1);
+  // twist_with_covariance.covariance[14] = tracker_.P_.at<double>(2,2);
+  // twist_with_covariance.covariance[21] = Sigma.at<double>(3,3);
+  // twist_with_covariance.covariance[28] = Sigma.at<double>(4,4);
+  // twist_with_covariance.covariance[35] = Sigma.at<double>(5,5);
+  // std::cout << "\n Sigma size :" << Sigma.size();
+  // std::cout << "\n ~~~~~~~~~~~~~~P_i  : " << StereoImage::P_i_;
+  // std::cout << " \n ~~~~~~~~~~~~~~P_i" << stereo_img_.P_i_;
+
+
 
   //ODOM
   nav_msgs::Odometry odom;

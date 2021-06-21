@@ -82,6 +82,7 @@ stereoDetect(StereoImage & img) {
 };
 
 /* ------------------------------------------------------------------------ */
+// possibly add flag ot compute covar
 void Tracker::
 stereoTrack(StereoImage & img_km1, StereoImage & img_k) {
   //check if tracker parameters initialized
@@ -141,6 +142,223 @@ stereoTrack(StereoImage & img_km1, StereoImage & img_k) {
   img_km1.get_ages()   = ages_km1;
   img_km1.get_opts()   = opts_km1;
 };
+
+
+
+
+
+
+
+
+
+
+
+/* ------------------------------------------------------------------------ */
+// Select covariance estimation method - DEREK
+void Tracker::
+stereoComputeCovariance(StereoImage & img_km1, StereoImage & img_k) {
+      /// constants
+  unsigned int covariance_method_;
+  covariance_method_ = 1;
+  static const unsigned int DellaertCov = 1;
+  static const unsigned int MatthiesCov = 0;
+  switch(covariance_method_) {
+    case DellaertCov:
+      stereoComputeCovarianceDellaert(img_km1, img_k);
+      break;
+    case MatthiesCov:
+      stereoComputeCovarianceMatthies(img_km1, img_k);
+      break;
+    default:
+      std::cout << "Invalid mode selected for Tracker::stereoComputeCovariance. \n";
+      exit(1);
+      break;
+  }
+}
+
+
+
+
+
+/* ------------------------------------------------------------------------ */
+
+void Tracker::
+stereoComputeCovarianceDellaert(StereoImage & img_km1, StereoImage & img_k) {
+
+  // disp_ = img_k.get_disp();
+  // double disp_ = img_k.get_l_kpts()[i].pt.x 
+  //   - img_k.get_r_kpts()[i].pt.x;
+  // std::cout <<"\n disp_ = " << disp_;
+  l_img_k = img_k.get_l_img();
+  l_img_km1 = img_km1.get_l_img();
+  r_img_k = img_k.get_r_img();
+  r_img_km1 = img_km1.get_r_img();
+  double bl = 0.07; // constant baseline (m)
+  double sx = 238.352; // constant focal length (mm)
+  double sigma_p = 0.1;
+  double sigma_m = 0.1;
+
+  //should change to assert
+  if(img_km1.get_ipts().size() != img_k.get_ipts().size()) {
+    std::cout << "Error! matched points not same between images \n";
+    exit(1);
+  }
+
+  //loop over all tracked features
+  for(int i=0; i<img_km1.get_l_kpts().size(); i++) {
+
+    //d_km1 = disp_.at<short>(img_km1.get_ipts()[i].y, img_km1.get_ipts()[i].x)/16;
+    d_k = img_k.get_l_kpts()[i].pt.x - img_k.get_r_kpts()[i].pt.x;
+
+    if(d_k > 5 && d_k < 100)
+    {
+
+      //sx and bl are the same for km1 and k
+      // double sx = (double) 
+      //   l_img_k.get_l_info().getProjectionMatrix().at<double>(0,0); // sx = sy = focal length
+      // double bl = (double) (-r_img_k.get_info().getProjectionMatrix().at<double>(0,3)
+      //     /img_k.get_r_img().get_info().getProjectionMatrix().at<double>(0,0));
+      kpt_ul = img_k.get_l_kpts()[i].pt.x;
+      kpt_ur = img_k.get_r_kpts()[i].pt.x;
+      kpt_vl = img_k.get_l_kpts()[i].pt.y;
+      kpt_vr = img_k.get_r_kpts()[i].pt.y;
+      // std::cout << "\n--- d_k = " << d_k;
+      // std::cout << "\n--- d_km1 = " << d_km1;
+
+      Jac_ =  (cv::Mat_<double>(3,3) <<
+              bl/d_k, 0.0, -(kpt_ul*bl)/pow(d_k,2), 
+              0.0, bl/d_k, -(kpt_vl*bl)/pow(d_k,2), 
+              0.0, 0.0, -(sx*bl)/pow(d_k,2)); 
+      
+      // std::cout << "\n Jac NEW= " << Jac_;
+
+      S_ = (cv::Mat_<double>(3,3) <<
+        sigma_p, 0.0, 0.0,
+        0.0, sigma_p, 0.0,
+        0.0, 0.0, sigma_m);
+
+      P_ = Jac_*S_*Jac_.t();
+      // std::cout << "\n+++++  P_ = " << P_;
+
+    }
+  }
+
+  // std::cout << "\n+++++  P_ = " << P_;
+  // img_km1.P = something1;
+  // img_k.P = something2;
+}
+
+
+
+
+
+/* ------------------------------------------------------------------------ */
+void Tracker::
+stereoComputeCovarianceMatthies(StereoImage & img_km1, StereoImage & img_k) {
+  l_img_k = img_k.get_l_img();
+  l_img_km1 = img_km1.get_l_img();
+  r_img_k = img_k.get_r_img();
+  r_img_km1 = img_km1.get_r_img();
+  double bl = 0.07; // constant baseline (m)
+  double sx = 238.352; // constant focal length (mm)
+  double sigma_p = 0.1;
+  double sigma_m = 0.1;
+
+  //should change to assert
+  if(img_km1.get_ipts().size() != img_k.get_ipts().size()) {
+    std::cout << "Error! matched points not same between images \n";
+    exit(1);
+  }
+
+  //loop over all tracked features
+  for(int i=0; i<img_km1.get_l_kpts().size(); i++) {
+
+
+
+    // if(i>0)
+    // {
+      d_km1 = img_km1.get_l_kpts()[i].pt.x - img_km1.get_r_kpts()[i].pt.x;
+      d_k = img_k.get_l_kpts()[i].pt.x - img_k.get_r_kpts()[i].pt.x;
+
+      kpt_ul = img_k.get_l_kpts()[i].pt.x;
+      kpt_ur = img_k.get_r_kpts()[i].pt.x;
+      kpt_vl = img_k.get_l_kpts()[i].pt.y;
+      kpt_vr = img_k.get_r_kpts()[i].pt.y;
+
+      double kpt_ul_m1 = img_km1.get_l_kpts()[i].pt.x;
+      double kpt_ur_m1 = img_km1.get_r_kpts()[i].pt.x;
+      double kpt_vl_m1 = img_km1.get_l_kpts()[i].pt.y;
+      double kpt_vr_m1 = img_km1.get_r_kpts()[i].pt.y;
+      // to make sure keypoints are valid and not e20+
+      double err_flag_ = kpt_ul + kpt_ur + kpt_vl + kpt_vr + kpt_ul_m1 + kpt_ur_m1 + kpt_vl_m1 + kpt_vr_m1;
+      double err_thresh = abs(err_flag_);
+
+      if(d_k > 5 && d_k < 100 && d_km1 > 5 && d_km1 < 100 && err_thresh < 10000)
+      {
+        // std::cout << " \n matth Dkm1 :: " << d_km1;
+        // std::cout << "\n matth DK :: " << d_k; 
+        // //sx and bl are the same for km1 and k
+        // double sx = (double) 
+        //   l_img_k.get_l_info().getProjectionMatrix().at<double>(0,0); // sx = sy = focal length
+        // double bl = (double) (-r_img_k.get_info().getProjectionMatrix().at<double>(0,3)
+        //     /img_k.get_r_img().get_info().getProjectionMatrix().at<double>(0,0));
+
+        // std::cout << "\n--- d_k = " << d_k;
+        // std::cout << "\n--- d_km1 = " << d_km1;
+        // std::cout << "\n ~~~~~~~~~kpt_ul_m1 : "<< kpt_ul_m1;
+
+        Jac_km1 = (cv::Mat_<double>(3,4) <<
+            -(2*bl*kpt_ur_m1)/pow(d_km1,2),  0.0, (2*bl*kpt_ul_m1)/pow(d_km1,2), 0.0,
+            -(bl*(kpt_vl_m1 + kpt_vr_m1))/pow(d_km1,2), bl/(d_km1), (bl*(kpt_vl_m1 + kpt_vr_m1))/pow(d_km1,2),  bl/(d_km1),
+            -(2*bl)/pow(d_km1,2), 0.0, 2*bl/pow(d_km1,2), 0.0); 
+
+
+        Jac_k = (cv::Mat_<double>(3,4) <<
+            -(2*bl*kpt_ur)/pow(d_k,2),  0.0, (2*bl*kpt_ul)/pow(d_k,2), 0.0,
+            -(bl*(kpt_vl + kpt_vr))/pow(d_k,2), bl/(d_k), (bl*(kpt_vl + kpt_vr)/pow(d_k,2)),  bl/(d_k),
+            -(2*bl)/pow(d_k,2), 0.0, 2*bl/pow(d_k,2), 0.0); 
+
+
+        // std::cout << " \n kpt_vl_m1 = " << kpt_vl_m1;
+        // std::cout << " \n kpt_vr_m1 = " << kpt_vr_m1;
+        // std::cout << " \n kpt_vl_m1 = " << kpt_vl_m1;
+        // std::cout << " \n kpt_vr_m1 = " << kpt_vr_m1;
+        // std::cout <<" \n NUM k=====  " << -(bl*(kpt_vl + kpt_vr));
+        // std::cout << " \n NUM km1==== " << -(bl*(kpt_vl_m1 + kpt_vr_m1));
+        // std::cout << "\n Jac K " << Jac_k;
+        // std::cout << "\n Jac Km1" << Jac_km1;
+        // std::cout << "\n Jac K__ T " << Jac_k.t();
+        // std::cout << "\n Jac Km1__ T" << Jac_km1.t();
+
+
+        U_ = Jac_km1*(Jac_km1.t());
+        V_ = Jac_k*(Jac_k.t());
+        std::cout << "\n---U_ : " << U_;
+        std::cout << "-\n--V_ : " << V_;
+        W_ = (U_ + V_);
+        std::cout << "\n****W_ = ****" << W_;
+        // P_ = Jac_*S_*Jac_.t();
+        // std::cout << "\n+++++  P_ = " << P_;
+
+      }
+
+
+    }
+    // }
+
+  
+}
+
+
+
+
+
+
+
+
+
+
+
 
 /* ------------------------------------------------------------------------ */
 void Tracker:: 

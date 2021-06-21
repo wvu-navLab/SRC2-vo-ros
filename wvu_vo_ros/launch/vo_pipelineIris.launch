@@ -2,6 +2,13 @@
 
   <!-- launch image selector -->
   <!-- <include file="$(find image_selection)/launch/selectIris.launch" /> -->
+   <!-- Start a nodelet manager; the name must be unqualified here -->
+  <node pkg="nodelet" type="nodelet" name="pipeline" args="manager" />
+
+  <!-- Include the stereo_image_proc.launch file and pass in a qualified manager name -->
+  <include file="$(find stereo_image_proc)/launch/stereo_image_proc.launch" ns="camera">
+    <arg name="manager" value="/pipeline" />
+  </include>
 
   <!-- launch vo -->
   <group ns="/">
