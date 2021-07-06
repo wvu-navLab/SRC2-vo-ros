@@ -22,7 +22,13 @@ int main(int argc, char **argv)
 
   VO::ROSStereoVO ros_stereo_vo(nh);
 
-  ros::spin();
+  while(ros::ok())
+  {
+    ros::spinOnce();
+    rate.sleep();
+  }
+
+  // ros::spin();
 
 	return 0;
 }
