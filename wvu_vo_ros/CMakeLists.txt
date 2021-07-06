@@ -76,3 +76,15 @@ target_link_libraries(ros_stereo_vo_node
   ros_stereo_vo
 )
 add_dependencies(ros_stereo_vo_node wvu_vo_ros_generate_messages_cpp)
+
+
+install(TARGETS ros_stereo_vo_node
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ )
+install(DIRECTORY launch/
+   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+   PATTERN ".svn" EXCLUDE)
+
+   install(DIRECTORY config/
+       DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
+       PATTERN ".svn" EXCLUDE)
