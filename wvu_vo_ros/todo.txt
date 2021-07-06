@@ -1,0 +1,66 @@
+
+///////////
+///////////
+///////////
+
+/////////////////////////////////
+//DO THIS AFTER COMPUTING CLIQUE
+/////////////////////////////////
+//for each point sx,bl,disparity
+tracker_.stereoComputeCovariance(img_p_, img);
+
+///////////
+///////////
+///////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//ADD THIS IN tracker.cpp, also add the function definitions to tracker.hpp
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+/* ------------------------------------------------------------------------ */
+//This function will set P_
+void Tracker::
+stereoComputeCovariance(StereoImage & img_km1, StereoImage & img_k) {
+  switch(covariance_method_) {
+    case Method1:
+      stereoComputeCovarianceMethod1(img_km1, img_k);
+      break;
+    case Method2:
+      stereoComputeCovarianceMethod2(img_km1, img_k);
+      break;
+    default:
+      std::cout << "Invalid mode selected for Tracker::stereoComputeCovariance. \n";
+      exit(1);
+      break;
+  }
+}
+
+void Tracker::
+stereoComputeCovarianceMethod1(StereoImage & img_km1, StereoImage & img_k) {
+
+  //should change to assert
+  if(img_km1.get_ipts().size() != img_k.get_ipts().size()) {
+    std::cout << "Error! matched points not same between images \n";
+    exit(1);
+  }
+
+  //loop over all tracked features
+  for(int i=0; img_km1.get_ipts().size(); i++) {
+    double d_km1 = disp_.at<short>(img_km1.get_ipts()[i].y, img_km1.get_ipts()[i].x)/16;
+    double d_k = disp_.at<short>(img_k.get_ipts()[i].y, img_k.get_ipts()[i].x)/16;
+
+    //sx and bl are the same for km1 and k
+    double sx = (double) img_k.get_l_img().get_info().getProjectionMatrix().at<double>(0,0);
+    double bl = (double) (-img_k.get_r_img().get_info().getProjectionMatrix().at<double>(0,3)
+        /img_k.get_r_img().get_info().getProjectionMatrix().at<double>(0,0));
+  }
+
+  // img_km1.P = something1;
+  // img_k.P = something2;
+}
+
+void Tracker::
+stereoComputeCovarianceMethod2(StereoImage & img_km1, StereoImage & img_k) {
+
+}
