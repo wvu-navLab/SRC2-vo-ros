@@ -32,7 +32,7 @@ add_library(wvu_vo
 	src/StereoImage.cpp
 	src/StereoVO.cpp)
 
-target_link_libraries(wvu_vo 
+target_link_libraries(wvu_vo
 	${OpenCV_LIBS}
  )
 
@@ -40,15 +40,19 @@ target_link_libraries(wvu_vo
 ########Examples########
 ########################
 add_executable(example_kitti examples/example_kitti.cpp)
-target_link_libraries(example_kitti 
+target_link_libraries(example_kitti
 	wvu_vo
  )
 
 add_executable(example_src2 examples/example_src2.cpp)
-target_link_libraries(example_src2 
+target_link_libraries(example_src2
 	wvu_vo
  )
-
+ install(TARGETS wvu_vo
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+ )
 #########################
 ##########Tests##########
 #########################
