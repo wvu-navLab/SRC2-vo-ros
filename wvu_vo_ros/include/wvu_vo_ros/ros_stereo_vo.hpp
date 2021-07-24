@@ -67,7 +67,7 @@ class ROSStereoVO : public StereoVO {
 
       //setup publishers
       disparity_pub_ = nh_.advertise<stereo_msgs::DisparityImage>("disparity",1);
-      odom_pub_ = nh_.advertise<nav_msgs::Odometry>("vo",1);
+      odom_pub_ = nh_.advertise<nav_msgs::Odometry>("localization/odometry/vo",1);
       tracks_pub_ = nh_.advertise<sensor_msgs::Image>("feature_tracks",1);
       disparity_display_pub_ = nh_.advertise<sensor_msgs::Image>("disparity_display",1);
 
